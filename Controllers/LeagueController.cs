@@ -12,7 +12,7 @@ namespace u17120323_INF354_HW1.Controllers
 {
     public class LeagueController : ApiController
     {
-        //hello
+        //hello world
         SoccerLeagueEntities db = new SoccerLeagueEntities();
         // GET: League
         //QuestionOne

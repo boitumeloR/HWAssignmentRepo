@@ -5,14 +5,13 @@ using System.Linq;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
-using u17120323_INF354_HW1.Models;
+using HW01_API.Models;
 using u17120323_INF354_HW1.ViewModels;
 
 namespace u17120323_INF354_HW1.Controllers
 {
     public class LeagueController : ApiController
     {
-        //hello world weffa
         SoccerLeagueEntities db = new SoccerLeagueEntities();
         // GET: League
         //QuestionOne
@@ -173,6 +172,30 @@ namespace u17120323_INF354_HW1.Controllers
                 message.error = "Null parameter, try another ID";
             }
             return message;
+        }
+
+        [System.Web.Http.HttpGet]
+        [System.Web.Http.Route("api/League/GetUserTypes")]
+        public List<dynamic> GetUserTypes()
+        {
+            var roles = db.UserRoles.ToList();
+            return DynRoles(roles);
+        }
+
+        public List<dynamic> DynRoles(List<UserRole> roles)
+        {
+            var dynroles = new List<dynamic>();
+            foreach( var role in roles)
+            {
+                dynamic rol = new ExpandoObject();
+
+                rol.UserRoleID = role.UserRoleID;
+                rol.Description = role.UserRoleDescription;
+
+                dynroles.Add(rol);
+            }
+
+            return dynroles;
         }
     }
 }

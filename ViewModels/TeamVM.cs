@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using u17120323_INF354_HW1.Models;
+using HW01_API.Models;
 
 namespace u17120323_INF354_HW1.ViewModels
 {

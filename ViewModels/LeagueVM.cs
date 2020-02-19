@@ -9,6 +9,6 @@ namespace u17120323_INF354_HW1.ViewModels
     {
         public int LeagueID { get; set; }
         public string LeagueName { get; set; }
-        public string LeagueLevel { get; set; }
+        public int LeagueLevel { get; set; }
     }
 }

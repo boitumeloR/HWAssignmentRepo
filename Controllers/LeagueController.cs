@@ -6,6 +6,7 @@ using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
 using HW01_API.Models;
+using HW01_API.ViewModels;
 using u17120323_INF354_HW1.ViewModels;
 
 namespace u17120323_INF354_HW1.Controllers
@@ -15,16 +16,43 @@ namespace u17120323_INF354_HW1.Controllers
         SoccerLeagueEntities db = new SoccerLeagueEntities();
         // GET: League
         //QuestionOne
-        [System.Web.Http.HttpGet]
+        // From what i gather every 'Get' method which needs some sort of user authentication should actually be a post method because we're passing  session every time
+        [System.Web.Http.HttpPost]
         [System.Web.Http.Route("api/League/GetPlayers")]
-        public List<dynamic> GetPlayers()
+        public dynamic GetPlayers([FromBody] UserSession sess)
         {
-            var players = db.Players.ToList();
-            return GetDynamicPlayers(players);
+            if (sess != null)
+            {
+                AuthVM vm = new AuthVM();
+                var session = vm.RefreshSession(sess);
+                var players = db.Players.ToList();
+                if (session.Error != null)
+                {
+                    return session;
+                }
+                else
+                {
+                    return GetDynamicPlayers(players, session);
+                }
+            }
+            else
+            {
+                return null;
+            }
+
         }
 
-        public List<dynamic> GetDynamicPlayers(List<Player> inplayer)
+        public dynamic GetDynamicPlayers(List<Player> inplayer, UserSession sess)
         {
+            dynamic retDyn = new ExpandoObject();
+
+            retDyn.Session = new UserSession
+            {
+                SessionID = sess.SessionID,
+                UserID = sess.UserID,
+                Type = sess.Type,
+                Error = sess.Error
+            };
             var dynList = new List<dynamic>();
             foreach (var pl in inplayer)
             {
@@ -38,7 +66,9 @@ namespace u17120323_INF354_HW1.Controllers
 
                 dynList.Add(dynplayer);
             }
-            return dynList;
+
+            retDyn.Players = dynList;
+            return retDyn;
         }
 
         //Question Two
@@ -144,58 +174,456 @@ namespace u17120323_INF354_HW1.Controllers
         }
 
         //Question 5
-        [System.Web.Http.HttpDelete]
+        [System.Web.Http.HttpPost]
         [System.Web.Http.Route("api/League/DeletePlayer")]
-        public dynamic DeletePlayer(int id)
+        public UserSession DeletePlayer([FromBody] SecurePlayer play)
         {
-            var player = db.Players.Where(zz => zz.PlayerID == id).FirstOrDefault();
-            dynamic message = new ExpandoObject();
-            if(player != null)
+            var player = db.Players.Where(zz => zz.PlayerID == play.player.PlayerID).FirstOrDefault();
+            AuthVM vm = new AuthVM();
+            var sess = vm.RefreshSession(play.session);
+            if (sess.Error == null)
             {
                 try
                 {
                     db.Players.Remove(player);
                     db.SaveChanges();
 
-                    message.success = true;
-                    message.error = null;
+                    return sess;
                 }
                 catch (Exception e)
                 {
-                    message.success = false;
-                    message.error = e.Message;
+                    return null;
                 }
             }
             else
             {
-                message.success = false;
-                message.error = "Null parameter, try another ID";
+                return sess;
             }
-            return message;
         }
-
         [System.Web.Http.HttpGet]
-        [System.Web.Http.Route("api/League/GetUserTypes")]
-        public List<dynamic> GetUserTypes()
+        [System.Web.Http.Route("api/League/GetTeams")]
+        
+        public List<dynamic> GetTeams()
         {
-            var roles = db.UserRoles.ToList();
-            return DynRoles(roles);
+            var teams = db.Teams.ToList();
+            return DynTeams(teams);
         }
 
-        public List<dynamic> DynRoles(List<UserRole> roles)
+        public List<dynamic> DynTeams(List<Team> teams)
         {
-            var dynroles = new List<dynamic>();
-            foreach( var role in roles)
+            var list = new List<dynamic>();
+
+            foreach (var tm in teams)
             {
-                dynamic rol = new ExpandoObject();
+                dynamic inteam = new ExpandoObject();
 
-                rol.UserRoleID = role.UserRoleID;
-                rol.Description = role.UserRoleDescription;
+                inteam.TeamID = tm.TeamID;
+                inteam.TeamName = tm.TeamName;
+                inteam.TeamAverage = tm.TeamAverage;
 
-                dynroles.Add(rol);
+                list.Add(inteam);
             }
 
-            return dynroles;
+            return list;
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/GetSecureTeams")]
+
+        public dynamic GetSecureTeam([FromBody]UserSession session)
+        {
+            AuthVM vm = new AuthVM();
+            var sess = vm.RefreshSession(session);
+            if (sess.Error ==null)
+            {
+                var teams = db.Teams.ToList();
+                return DynTeams(teams, sess);
+            }
+            else
+            {
+                dynamic ret = new ExpandoObject();
+                ret.Teams = null;
+                ret.Session = sess;
+                return ret;
+            }
+        }
+
+        public dynamic DynTeams(List<Team> teams, UserSession sess)
+        {
+            var list = new List<dynamic>();
+            dynamic ret = new ExpandoObject();
+
+            ret.Session = sess;
+            foreach (var tm in teams)
+            {
+                dynamic inteam = new ExpandoObject();
+
+                inteam.TeamID = tm.TeamID;
+                inteam.TeamName = tm.TeamName;
+                inteam.TeamAverage = tm.TeamAverage;
+
+                list.Add(inteam);
+            }
+            ret.Teams = list;
+            return ret;
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/UpdatePlayer")]
+
+        public UserSession UpdatePlayer([FromBody] SecurePlayer player )
+        {
+            if (player != null)
+            {
+                AuthVM vm = new AuthVM();
+                var sess = vm.RefreshSession(player.session);
+
+                if (sess.Error == null)
+                {
+                    var play = db.Players.Where(zz => zz.PlayerID == player.player.PlayerID).FirstOrDefault();
+                    
+                    if (play != null)
+                    {
+                        try
+                        {
+                            play.PlayerName = player.player.PlayerName;
+                            play.PlayerSurname = player.player.PlayerSurname;
+                            play.PlayerAge = player.player.PlayerAge;
+                            play.PlayerAverage = (decimal)player.player.PlayerAverage;
+                            play.TeamID = player.player.TeamID;
+
+                            db.SaveChanges();
+
+                            return sess;
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                    }
+                }
+                else
+                {
+                    return sess;
+                }
+            }
+            return null;
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/AddPlayer")]
+
+        public UserSession AddPlayer([FromBody]SecurePlayer player)
+        {
+            if (player != null)
+            {
+                AuthVM vm = new AuthVM();
+                var sess = vm.RefreshSession(player.session);
+
+                if (sess.Error == null)
+                {
+                    try
+                    {
+                        var play = new Player();
+
+                        play.PlayerName = player.player.PlayerName;
+                        play.PlayerSurname = player.player.PlayerSurname;
+                        play.PlayerAge = player.player.PlayerAge;
+                        play.PlayerAverage = (decimal)player.player.PlayerAverage;
+                        play.TeamID = player.player.TeamID;
+
+                        db.Players.Add(play);
+                        db.SaveChanges();
+
+                        return sess;
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                }
+                else
+                {
+                    return sess;
+                }
+            }
+            return null;
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/GetSecureLeague")]
+        public SecureLeague GetSecureLeague([FromBody] UserSession session)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(session);
+            var secure = new SecureLeague();
+            if(sess.Error == null)
+            {
+                var sLg = new List<LeagueVM>();
+                var leagues = db.Leagues.ToList();
+                foreach(var l in leagues)
+                {
+                    var lg = new LeagueVM();
+                    lg.LeagueID = l.LeagueID;
+                    lg.LeagueName = l.LeagueName;
+                    lg.LeagueLevel = l.LeagueLevel;
+
+                    sLg.Add(lg);
+                }
+
+                secure.Leagues = sLg;
+                secure.Session = sess;
+                return secure;
+            }
+            else
+            {
+                secure.Session = sess;
+                secure.Leagues = null;
+                return secure;
+            }
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/AddTeam")]
+        public UserSession AddTeam([FromBody]SecureTeam team)
+        {
+            if (team != null)
+            {
+                var vm = new AuthVM();
+                var sess = vm.RefreshSession(team.Session);
+
+                if (sess.Error == null)
+                {
+                    var inteam = new Team
+                    {
+                        TeamName = team.Team.TeamName,
+                        TeamAverage = (decimal)team.Team.TeamAverage,
+                        LeagueID = team.Team.LeagueID
+                    };
+                    try
+                    {
+                        db.Teams.Add(inteam);
+                        db.SaveChanges();
+
+                        return sess;
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
+                    }
+                }
+                else
+                {
+                    return sess;
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/AddLeague")]
+
+        public UserSession AddLeague([FromBody]LeagueRestrict league)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(league.Session);
+
+            if (sess.Error == null)
+            {
+                var inLeague = new League
+                {
+                    LeagueName = league.League.LeagueName,
+                    LeagueLevel = league.League.LeagueLevel
+                };
+
+                try
+                {
+                    db.Leagues.Add(inLeague);
+                    db.SaveChanges();
+
+                    return sess;
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+            else
+            {
+                return sess;
+            }
+
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/UpdateLeague")]
+
+        public UserSession UpdateLeague([FromBody]LeagueRestrict league)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(league.Session);
+
+            if (sess.Error == null)
+            {
+                var upLeague = db.Leagues.Where(zz => zz.LeagueID == league.League.LeagueID).FirstOrDefault();
+
+                try
+                {
+                    upLeague.LeagueName = league.League.LeagueName;
+                    upLeague.LeagueLevel = league.League.LeagueLevel;
+
+                    db.SaveChanges();
+
+                    return sess;
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+            else
+            {
+                return sess;
+            }
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/UpdateTeam")]
+
+        public UserSession UpdateTeam([FromBody]SecureTeam team)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(team.Session);
+
+            if(sess.Error == null)
+            {
+                var upteam = db.Teams.Where(zz => zz.TeamID == team.Team.TeamID).FirstOrDefault();
+
+                try
+                {
+                    upteam.TeamName = team.Team.TeamName;
+                    upteam.TeamAverage = (decimal)team.Team.TeamAverage;
+                    upteam.LeagueID = team.Team.LeagueID;
+
+                    db.SaveChanges();
+
+                    return sess;
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+            return sess;
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/GetUserTypes")]
+
+        public VIewUserTypeVM GetUserTypes([FromBody]UserSession session)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(session);
+            var uVM = new VIewUserTypeVM();
+            if (sess.Error == null)
+            {
+
+                var uList = new List<UserTypeVM_>();
+                uVM.Session = sess;
+                var types = db.UserRoles.ToList();
+
+                foreach(var type in types)
+                {
+                    var role = new UserTypeVM_();
+
+                    role.UserTypeID = type.UserRoleID;
+                    role.UserTypeDescription = type.UserRoleDescription;
+
+                    uList.Add(role);
+                }
+
+                uVM.UserTypes = uList;
+
+                return uVM;
+            }
+            else
+            {
+                uVM.Session = sess;
+                uVM.UserTypes = null;
+                return uVM;
+            }
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/AddUserType")]
+        public UserSession AddUserType([FromBody] SecureUserType usertype)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(usertype.Session);
+
+            if(sess.Error == null)
+            {
+                var role = new UserRole
+                {
+                    UserRoleDescription = usertype.UserType.UserTypeDescription
+                };
+
+                try
+                {
+                    db.UserRoles.Add(role);
+                    db.SaveChanges();
+
+                    return sess;
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+            else
+            {
+                return sess;
+            }
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/League/UpdateUserType")]
+
+        public UserSession UpdateUserType([FromBody] SecureUserType usertype)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(usertype.Session);
+
+            if (sess.Error == null)
+            {
+                var upUser = db.UserRoles.Where(zz => zz.UserRoleID == usertype.UserType.UserTypeID).FirstOrDefault();
+
+                try
+                {
+                    upUser.UserRoleDescription = usertype.UserType.UserTypeDescription;
+
+                    db.SaveChanges();
+                    return sess;
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+            else
+            {
+                return sess;
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ namespace u17120323_INF354_HW1.ViewModels
         public int TeamID { get; set; }
         public string TeamName { get; set; }
         public double TeamAverage { get; set; }
+        public int LeagueID { get; set; }
         public List<PlayerVM> TeamPlayers = new List<PlayerVM>();
     }
 }

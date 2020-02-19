@@ -12,5 +12,6 @@ namespace u17120323_INF354_HW1.ViewModels
         public string PlayerSurname { get; set; }
         public double PlayerAverage { get; set; }
         public string PlayerAge { get; set; }
+        public int TeamID { get; set; }
     }
 }

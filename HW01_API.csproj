@@ -213,10 +213,12 @@
     <Compile Include="ViewModels\SecureLeague.cs" />
     <Compile Include="ViewModels\SecurePlayer.cs" />
     <Compile Include="ViewModels\SecureTeam.cs" />
+    <Compile Include="ViewModels\SecureUser.cs" />
     <Compile Include="ViewModels\SecureUserType.cs" />
     <Compile Include="ViewModels\TeamVM.cs" />
     <Compile Include="ViewModels\UserSession.cs" />
     <Compile Include="ViewModels\UserTypeVM].cs" />
+    <Compile Include="ViewModels\UserVM.cs" />
     <Compile Include="ViewModels\VIewUserTypeVM.cs" />
   </ItemGroup>
   <ItemGroup>

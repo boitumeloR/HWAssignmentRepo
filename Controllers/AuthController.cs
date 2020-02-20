@@ -67,5 +67,43 @@ namespace HW01_API.Controllers
             var session = vm.LogIn(vm);
             return session;
         }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/Auth/GetUser")]
+        public SecureUser GetUser(UserSession session)
+        {
+            var vm = new AuthVM();
+            var sess = vm.RefreshSession(session);
+            var returnUser = new SecureUser();
+            if (sess.Error == null)
+            {
+                var user = db.UserAuths.Where(zz => zz.SessionID == sess.SessionID && sess.UserID == sess.UserID).FirstOrDefault();
+                var uservm = new UserVM
+                {
+                    UserAuthID = user.UserAuthID,
+                    Username = user.Username,
+                };
+                returnUser.Session = sess;
+                returnUser.User = uservm;
+
+                return returnUser;
+            }
+            else
+            {
+                returnUser.Session = sess;
+                returnUser.User = null;
+                return returnUser;
+            }
+        }
+
+        [System.Web.Http.HttpPost]
+        [System.Web.Http.Route("api/Auth/UpdateUser")]
+
+        public void UpdateUser(SecureUser user)
+        {
+            var vm = new AuthVM();
+
+            vm.UpdateUser(user);
+        }
     }
 }

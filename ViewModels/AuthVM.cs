@@ -176,6 +176,33 @@ namespace HW01_API.ViewModels
             }
         }
 
+        public void UpdateUser(SecureUser user)
+        {
+            var sess = RefreshSession(user.Session);
+            SoccerLeagueEntities db = new SoccerLeagueEntities();
+
+            if (sess.Error != null)
+            {
+                var use = db.UserAuths.Where(zz => zz.UserAuthID == user.User.UserAuthID).FirstOrDefault();
+
+                try
+                {
+                    use.Username = user.User.Username;
+                    use.UserPassword = ComputeSHA256(user.User.Password);
+
+                    db.SaveChanges();
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+            }
+            
+            
+
+        }
+
         public string ComputeSHA256(string rawData)
         {
             using (SHA256 sha256Hash = SHA256.Create())

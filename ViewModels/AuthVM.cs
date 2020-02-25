@@ -176,31 +176,44 @@ namespace HW01_API.ViewModels
             }
         }
 
-        public void UpdateUser(SecureUser user)
+        public UserSession UpdateUser(SecureUser user)
         {
             var sess = RefreshSession(user.Session);
             SoccerLeagueEntities db = new SoccerLeagueEntities();
 
-            if (sess.Error != null)
+            if (sess.Error == null)
             {
-                var use = db.UserAuths.Where(zz => zz.UserAuthID == user.User.UserAuthID).FirstOrDefault();
-
-                try
+                var testPass = ComputeSHA256(user.User.CurrentPassword);
+                var use = db.UserAuths.Where(zz => zz.UserAuthID == user.User.UserAuthID && zz.UserPassword == testPass).FirstOrDefault();
+                if (use != null)
                 {
-                    use.Username = user.User.Username;
-                    use.UserPassword = ComputeSHA256(user.User.Password);
+                    try
+                    {
+                        use.Username = user.User.Username;
+                        use.UserPassword = ComputeSHA256(user.User.Password);
 
-                    db.SaveChanges();
+                        db.SaveChanges();
+
+                        return sess;
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
+                    }
                 }
-                catch (Exception)
+                else
                 {
+                    sess.Error = "Current Password Incorrect";
 
-                    throw;
+                    return sess;
                 }
+
             }
-            
-            
-
+            else
+            {
+                return sess;
+            }
         }
 
         public string ComputeSHA256(string rawData)

@@ -99,11 +99,11 @@ namespace HW01_API.Controllers
         [System.Web.Http.HttpPost]
         [System.Web.Http.Route("api/Auth/UpdateUser")]
 
-        public void UpdateUser(SecureUser user)
+        public UserSession UpdateUser(SecureUser user)
         {
             var vm = new AuthVM();
 
-            vm.UpdateUser(user);
+            return vm.UpdateUser(user);
         }
     }
 }

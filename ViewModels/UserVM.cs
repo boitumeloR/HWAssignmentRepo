@@ -10,5 +10,6 @@ namespace HW01_API.ViewModels
         public int UserAuthID { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
+        public string CurrentPassword { get; set; }
      }
 }

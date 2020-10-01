@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Web;
 using System.Web.Http;
+using System.Web.Http.Cors;
 using System.Web.Mvc;
 
 namespace HW01_API.Controllers
@@ -29,8 +30,8 @@ namespace HW01_API.Controllers
             {
                 dynamic rol = new ExpandoObject();
 
-                rol.UserRoleID = role.UserRoleID;
-                rol.Description = role.UserRoleDescription;
+                rol.UserTypeID = role.UserRoleID;
+                rol.UserTypeDescription = role.UserRoleDescription;
 
                 dynroles.Add(rol);
             }

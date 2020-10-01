@@ -21,7 +21,7 @@ namespace HW01_API.ViewModels
             SoccerLeagueEntities db = new SoccerLeagueEntities();
 
             var checkuser = db.UserAuths.Where(zz => zz.Username == vm.username).FirstOrDefault();
-            dynamic returnuser = new ExpandoObject();
+            dynamic returnuser = new UserSession();
             if (checkuser == null)
             {
                 UserAuth auth = new UserAuth

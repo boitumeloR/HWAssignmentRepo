@@ -11,8 +11,12 @@ namespace HW01_API
         public static void Register(HttpConfiguration config)
         {
             // Web API configuration and services
-            var cors = new EnableCorsAttribute("http://localhost:4200", headers: "*", methods: "*");
+            var cors = new EnableCorsAttribute("http://localhost:4200 , http://localhost:8100", headers: "*", methods: "*");
+            //var ion = new EnableCorsAttribute("http://localhost:8100", headers: "*", methods: "*");
             config.EnableCors(cors);
+
+            //var ionic = new EnableCorsAttribute("http://localhost:8100", headers: "*", methods: "*");
+            //config.EnableCors(ionic);
             // Web API routes
             config.MapHttpAttributeRoutes();
 
